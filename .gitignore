@@ -47,3 +47,4 @@ ios/
 # Electron
 electron-dist/
 out/
+build-x-release.apk
