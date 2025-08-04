@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { I18nManager } from 'react-native';
-import { Provider as PaperProvider } from 'react-native-paper';
+import { Provider as PaperProvider, DefaultTheme, DarkTheme } from 'react-native-paper';
 
 // Import screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -19,27 +19,46 @@ import CloudBrowserScreen from './src/screens/CloudBrowserScreen';
 import AccountSettingsScreen from './src/screens/AccountSettingsScreen';
 import HelpSupportScreen from './src/screens/HelpSupportScreen';
 
+// Import theme provider
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+
 // Enable RTL for Arabic
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
 
 const Stack = createStackNavigator();
 
-const theme = {
-  colors: {
-    primary: '#2c2c2c',
-    accent: '#f0f0f0',
-    background: '#f5f5f5',
-    surface: '#ffffff',
-    text: '#000000',
-  },
-};
+// Main app component with theme context
+const MainApp = () => {
+  const { theme, isDark } = useTheme();
+  
+  // Configure Paper theme based on our theme
+  const paperTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...isDark ? DarkTheme.colors : DefaultTheme.colors,
+      primary: theme.primary,
+      accent: theme.accent,
+      background: theme.background,
+      surface: theme.surface,
+      text: theme.text,
+    },
+  };
 
-export default function App() {
   return (
-    <PaperProvider theme={theme}>
-      <NavigationContainer>
-        <StatusBar style="dark" />
+    <PaperProvider theme={paperTheme}>
+      <NavigationContainer theme={{
+        dark: isDark,
+        colors: {
+          primary: theme.primary,
+          background: theme.background,
+          card: theme.surface,
+          text: theme.text,
+          border: theme.border,
+          notification: theme.notification,
+        }
+      }}>
+        <StatusBar style={theme.statusBar} />
         <Stack.Navigator 
           initialRouteName="Login"
           screenOptions={{
@@ -61,5 +80,14 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
+  );
+};
+
+// Root component that wraps the app with ThemeProvider
+export default function App() {
+  return (
+    <ThemeProvider>
+      <MainApp />
+    </ThemeProvider>
   );
 }

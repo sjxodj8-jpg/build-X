@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,22 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ChatScreen from './ChatScreen';
 import SideMenu from '../components/SideMenu';
 import AdBanner from '../components/AdBanner';
+import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 const MainScreen = ({ navigation, route }) => {
+  const { theme, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('الكل');
   const [showSideMenu, setShowSideMenu] = useState(false);
   const [userPoints, setUserPoints] = useState(293);
+  const [refreshing, setRefreshing] = useState(false);
   
   const { userType, email, name } = route.params || {};
 
@@ -36,46 +40,55 @@ const MainScreen = ({ navigation, route }) => {
   const handleUpgrade = () => {
     navigation.navigate('Upgrade', { userPoints, setUserPoints });
   };
+  
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    // Simulate a refresh
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <TouchableOpacity onPress={toggleSideMenu} style={styles.headerButton}>
-          <Ionicons name="person-circle-outline" size={32} color="#2c2c2c" />
+          <Ionicons name="person-circle-outline" size={32} color={theme.text} />
         </TouchableOpacity>
         
         <View style={styles.headerCenter}>
-          <Text style={styles.logo}>Build X</Text>
+          <Text style={[styles.logo, { color: theme.text }]}>Build X</Text>
         </View>
         
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="notifications-outline" size={24} color="#2c2c2c" />
+            <Ionicons name="notifications-outline" size={24} color={theme.text} />
             <View style={styles.notificationBadge}>
               <Text style={styles.badgeText}>2</Text>
             </View>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="search-outline" size={24} color="#2c2c2c" />
+            <Ionicons name="search-outline" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { backgroundColor: theme.surface }]}>
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[
               styles.tab,
-              activeTab === tab && styles.activeTab
+              activeTab === tab && [styles.activeTab, { backgroundColor: theme.primary }]
             ]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[
               styles.tabText,
+              { color: theme.textSecondary },
               activeTab === tab && styles.activeTabText
             ]}>
               {tab}
@@ -85,52 +98,88 @@ const MainScreen = ({ navigation, route }) => {
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.primary]}
+            tintColor={theme.primary}
+          />
+        }
+      >
         {/* Ad Banner */}
         <AdBanner />
         
         {/* Points Display */}
         <View style={styles.pointsContainer}>
-          <View style={styles.pointsCard}>
+          <View style={[styles.pointsCard, { backgroundColor: theme.surface }]}>
             <View style={styles.pointsInfo}>
-              <Text style={styles.pointsLabel}>رصيد</Text>
+              <Text style={[styles.pointsLabel, { color: theme.textSecondary }]}>رصيد</Text>
               <View style={styles.pointsRow}>
                 <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={styles.pointsValue}>{userPoints}</Text>
+                <Text style={[styles.pointsValue, { color: theme.text }]}>{userPoints}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
+            <TouchableOpacity style={[styles.upgradeButton, { backgroundColor: theme.primary }]} onPress={handleUpgrade}>
               <Text style={styles.upgradeText}>ترقية</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-
+        {/* App Version Note */}
+        <View style={[styles.noteContainer, { 
+          backgroundColor: theme.surface,
+          borderLeftColor: theme.primary
+        }]}>
+          <Text style={[styles.noteTitle, { color: theme.text }]}>مرحبا بكم في تطبيق Build X</Text>
+          <Text style={[styles.noteText, { color: isDark ? theme.textSecondary : '#444' }]}>
+            ألى جميع الزوار الذي أتو ألى التطبيق من خلال دعوة المطور الرسمي أن يدركوا أن هذه التطبيق هو في نسخة v 0.0.1 وكل الأشياء التي ترونها من الممكن تغيرها بالكامل
+          </Text>
+          <Text style={[styles.noteFooter, { color: theme.textSecondary }]}>
+            شكرا لاستخدامك تطبيق Build X{"\n"}
+            By : Mustfa
+          </Text>
+        </View>
 
         {/* Welcome Message */}
         <View style={styles.welcomeContainer}>
-          <Ionicons name="chatbubble-ellipses-outline" size={48} color="#ccc" />
-          <Text style={styles.welcomeTitle}>كيف يمكنني مساعدتك؟</Text>
-          <Text style={styles.welcomeSubtitle}>ابدأ محادثة جديدة أو اختر من المواضيع المقترحة</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={48} color={isDark ? '#555' : '#ccc'} />
+          <Text style={[styles.welcomeTitle, { color: theme.text }]}>كيف يمكنني مساعدتك؟</Text>
+          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>ابدأ محادثة جديدة أو اختر من المواضيع المقترحة</Text>
           
           {/* Quick Actions */}
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.quickActionButton} onPress={handleNewChat}>
-              <Ionicons name="chatbubble" size={20} color="#2c2c2c" />
-              <Text style={styles.quickActionText}>محادثة عامة</Text>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: theme.surface }]} 
+              onPress={handleNewChat}
+            >
+              <Ionicons name="chatbubble" size={20} color={theme.text} />
+              <Text style={[styles.quickActionText, { color: theme.text }]}>محادثة عامة</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.quickActionButton} onPress={handleNewChat}>
-              <Ionicons name="code-slash" size={20} color="#2c2c2c" />
-              <Text style={styles.quickActionText}>مساعدة برمجة</Text>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: theme.surface }]} 
+              onPress={handleNewChat}
+            >
+              <Ionicons name="code-slash" size={20} color={theme.text} />
+              <Text style={[styles.quickActionText, { color: theme.text }]}>مساعدة برمجة</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.quickActionButton} onPress={handleNewChat}>
-              <Ionicons name="school" size={20} color="#2c2c2c" />
-              <Text style={styles.quickActionText}>تعليم</Text>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: theme.surface }]} 
+              onPress={handleNewChat}
+            >
+              <Ionicons name="school" size={20} color={theme.text} />
+              <Text style={[styles.quickActionText, { color: theme.text }]}>تعليم</Text>
             </TouchableOpacity>
           </View>
         </View>
+        
+        {/* Add extra padding at the bottom for better scrolling */}
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* New Chat Button */}
@@ -404,6 +453,43 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  noteContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2c2c2c',
+  },
+  noteTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c2c2c',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  noteText: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 22,
+    textAlign: 'right',
+    marginBottom: 12,
+  },
+  noteFooter: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: 8,
   },
 });
 
